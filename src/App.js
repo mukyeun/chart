@@ -9,7 +9,7 @@ function App() {
     <div className="App">
       <nav className="nav-menu">
         <div className="nav-left">
-          <h1>BioDigital Human</h1>
+          <h1>SmartPulse Human</h1>
         </div>
         <div className="nav-right">
           <Link to="/" className="nav-link">데이터 입력</Link>
