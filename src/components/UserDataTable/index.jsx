@@ -28,7 +28,7 @@ const UserDataTable = () => {
   const toggleAllCheckboxes = (e) => {
     e.stopPropagation();
     if (e.target.checked) {
-      const allIds = userData.map(user => user._id);
+      const allIds = userData.map(user => user.id);
       setCheckedItems(new Set(allIds));
     } else {
       setCheckedItems(new Set());
@@ -110,12 +110,12 @@ const UserDataTable = () => {
           </thead>
           <tbody>
             {userData.map((user) => (
-              <tr key={user._id}>
+              <tr key={user.id}>
                 <td onClick={(e) => e.stopPropagation()}>
                   <input
                     type="checkbox"
-                    checked={checkedItems.has(user._id)}
-                    onChange={(e) => toggleCheckbox(user._id, e)}
+                    checked={checkedItems.has(user.id)}
+                    onChange={(e) => toggleCheckbox(user.id, e)}
                   />
                 </td>
                 <td>{user.createdAt}</td>

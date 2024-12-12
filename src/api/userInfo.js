@@ -8,17 +8,22 @@ export const saveUserInfo = async (userData) => {
   try {
     // 현재 날짜 생성
     const now = new Date();
-    // YYYY/MM/DD 형식으로 변환
+    // YYYY/MM/DD HH:mm 형식으로 변환
     const formattedDate = [
       now.getFullYear(),
       String(now.getMonth() + 1).padStart(2, '0'),
       String(now.getDate()).padStart(2, '0')
-    ].join('/');
+    ].join('/') + ' ' + 
+    [
+      String(now.getHours()).padStart(2, '0'),
+      String(now.getMinutes()).padStart(2, '0')
+    ].join(':');
 
     // 새 데이터 추가
     const newData = {
-      id: Date.now(),
-      createdAt: formattedDate,  // 간단한 날짜 형식
+      _id: Date.now(), // id를 _id로 변경
+      id: Date.now(),  // 기존 id도 유지
+      createdAt: formattedDate,
       ...userData
     };
 

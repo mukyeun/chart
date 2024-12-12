@@ -2,6 +2,7 @@ import React from 'react';
 import { Routes, Route, Link } from 'react-router-dom';
 import UserInfoForm from './components/UserInfoForm';
 import UserDataTable from './components/UserDataTable';
+import MainPage from './pages/MainPage';
 import './App.css';
 
 function App() {
@@ -18,7 +19,7 @@ function App() {
       </nav>
       
       <Routes>
-        <Route path="/" element={<UserInfoForm />} />
+        <Route path="/" element={<MainPage />} />
         <Route path="/data" element={<UserDataTable />} />
       </Routes>
     </div>

@@ -40,54 +40,49 @@
 }
 
 .nav-menu {
-  background: rgba(255, 255, 255, 0.95);
-  padding: 1rem 2rem;
+  background: linear-gradient(to right, #334155, #1e293b);
+  padding: 0.75rem 2rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  position: sticky;
-  top: 0;
-  z-index: 1000;
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid rgba(229, 231, 235, 0.8);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .nav-left h1 {
-  color: #1e293b;
-  margin: 0;
-  font-size: 1.5rem;
+  color: #fef9c3;
+  font-size: 2.5rem;
   font-weight: 600;
-  background: linear-gradient(120deg, #3b82f6, #2563eb);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  letter-spacing: -0.5px;
+  margin: 0;
+  letter-spacing: 0.05em;
 }
 
 .nav-right {
   display: flex;
-  gap: 0.5rem;
+  gap: 2rem;
+  align-items: center;
 }
 
 .nav-link {
-  color: #4b5563;
+  color: #fef9c3;
+  font-size: 1.5rem;
+  font-weight: 600;
   text-decoration: none;
-  padding: 0.6rem 1.2rem;
-  border-radius: 8px;
+  padding: 0.8rem 1.8rem;
+  border-radius: 6px;
   transition: all 0.2s ease;
-  font-weight: 500;
-  font-size: 0.95rem;
-  position: relative;
+  letter-spacing: 0.05em;
 }
 
 .nav-link:hover {
-  color: #2563eb;
-  background: rgba(59, 130, 246, 0.08);
+  color: #fef08a;
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateY(-1px);
 }
 
+/* 활성 링크 스타일 */
 .nav-link.active {
-  color: #2563eb;
-  background: rgba(59, 130, 246, 0.1);
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
 }
 
 /* 반응형 디자인 */
@@ -194,7 +189,7 @@ input[type="number"] {
   font-weight: 600;  /* 원래의 진하기로 복원 */
   color: #1e293b;    
   margin-bottom: 6px;
-  font-size: 0.95rem;  /* 원래 크기로 복원 */
+  font-size: 0.95rem;  /* 원래 기로 복원 */
 }
 
 /* 라디오 버튼 라벨도 동일하게 복원 */
@@ -207,7 +202,7 @@ input[type="number"] {
 .field-label {
   font-size: 1.1rem;         
   font-weight: 900;          /* 가장 진한 굵기로 설정 */
-  color: #000000;           /* 순수 검정색으로 변경 */
+  color: #000000;           /* 순수 ��정색으로 변경 */
   margin-bottom: 8px;
   display: block;
   letter-spacing: -0.3px;
@@ -234,4 +229,112 @@ input::placeholder,
 textarea::placeholder {
   color: #94a3b8;
   font-size: 0.9rem;
+}
+
+/* Header 스타일 */
+header {
+  background: linear-gradient(to right, #1e293b, #0f172a);
+  padding: 0.75rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+header a {
+  text-decoration: none;
+}
+
+header .header-title {
+  color: #ffffff;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+header .header-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+header .header-link {
+  color: #cbd5e1;
+  font-size: 0.875rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+header .header-link:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* 맥파분석 섹션 스타일 */
+.pulse-wave-analysis {
+  max-width: 800px;
+  margin: 20px auto;
+  padding: 0 20px;
+}
+
+.pulse-wave-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 15px;
+  margin-top: 10px;
+}
+
+.pulse-wave-input {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.pulse-wave-input input {
+  text-align: left;
+  padding: 8px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  width: 100%;
+}
+
+.pulse-wave-input label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+/* 파일 입력 컨테이너 스타일 */
+.file-input-container {
+  margin: 20px 0;
+  text-align: left;
+}
+
+.file-input {
+  padding: 10px;
+  border: 2px dashed #e2e8f0;
+  border-radius: 6px;
+  width: 100%;
+  cursor: pointer;
+  background: #f8fafc;
+  transition: all 0.2s ease;
+}
+
+.file-input:hover {
+  border-color: #2563eb;
+  background: #f1f5f9;
+}
+
+.file-input::-webkit-file-upload-button {
+  background: #2563eb;
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-right: 10px;
+  transition: all 0.2s ease;
+}
+
+.file-input::-webkit-file-upload-button:hover {
+  background: #1d4ed8;
 }
