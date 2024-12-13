@@ -185,3 +185,17 @@ input[name="residentNumber"]:focus,
 .button.secondary:hover {
   background-color: #e0e0e0;
 }
+
+.loading {
+  padding: 10px;
+  color: #666;
+  font-style: italic;
+}
+
+.error-message {
+  padding: 10px;
+  color: #dc2626;
+  background-color: #fee2e2;
+  border-radius: 4px;
+  margin-top: 8px;
+}

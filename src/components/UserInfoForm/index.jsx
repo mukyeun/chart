@@ -1,61 +1,71 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { saveUserInfo, getAllUserInfo } from '../../api/userInfo';
 import { 증상카테고리 } from '../../data/symptoms';
 import { 약물카테고리 } from '../../data/medications';
 import { 기호식품카테고리 } from '../../data/preferences';
 import * as XLSX from 'xlsx';
 import '../../styles/UserInfoForm.css';
-// Excel 날짜 숫자를 Date 객체로 변환하는 함수
+// Excel 날짜를 JavaScript Date로 변환하는 함수
 const excelDateToJSDate = (excelDate) => {
-  const EXCEL_1900_EPOCH = new Date(Date.UTC(1899, 11, 30));
-  const days = Math.floor(excelDate);
-  const fraction = excelDate - days;
-  const millisecondsInDay = 24 * 60 * 60 * 1000;
-  const milliseconds = days * millisecondsInDay + (fraction * millisecondsInDay);
-  
-  return new Date(EXCEL_1900_EPOCH.getTime() + milliseconds);
-};
-// parseDateParts 함수
-const parseDateParts = (dateValue) => {
   try {
-    let date;
+    if (!excelDate) return null;
+    const EXCEL_EPOCH = new Date(Date.UTC(1899, 11, 30));
+    const msPerDay = 24 * 60 * 60 * 1000;
+    const date = new Date(EXCEL_EPOCH.getTime() + (excelDate - 1) * msPerDay);
     
-    // 숫자인 경우 (Excel 날짜)
-    if (typeof dateValue === 'number') {
-      date = excelDateToJSDate(dateValue);
-      return {
-        year: date.getFullYear(),
-        month: date.getMonth() + 1,
-        day: date.getDate(),
-        hour: date.getHours(),
-        minute: date.getMinutes(),
-        date,
-        timestamp: date.getTime()
-      };
+    // 유효성 검사
+    if (isNaN(date.getTime())) {
+      console.warn('유효하지 않은 Excel 날짜:', excelDate);
+      return null;
     }
     
-    // 문자열인 경우
-    const [datePart, timePart] = dateValue.split(' ');
-    const [month, day, yearStr] = datePart.split('/');
-    const [hours, minutes] = timePart.split(':');
-    const fullYear = parseInt(yearStr, 10) < 100 ? 2000 + parseInt(yearStr, 10) : parseInt(yearStr, 10);
-    date = new Date(fullYear, parseInt(month, 10) - 1, parseInt(day, 10), parseInt(hours, 10), parseInt(minutes, 10));
-    return {
-      year: fullYear,
-      month: parseInt(month, 10),
-      day: parseInt(day, 10),
-      hour: parseInt(hours, 10),
-      minute: parseInt(minutes, 10),
-      date,
-      timestamp: date.getTime()
-    };
+    return date;
   } catch (error) {
-    console.error('날짜 파싱 오류:', { 입력값: dateValue, 에러: error.message });
+    console.error('Excel 날짜 변환 오류:', { excelDate, error });
+    return null;
+  }
+};
+// 날짜 문이터 처리 함수
+const processDateValue = (rawDate) => {
+  try {
+    if (!rawDate) return null;
+
+    // 숫자형 Excel 날짜
+    if (typeof rawDate === 'number') {
+      const date = excelDateToJSDate(rawDate);
+      console.log('Excel 날짜 변환:', {
+        원본: rawDate,
+        변환결과: date?.toLocaleString()
+      });
+      return date;
+    }
+
+    // 문자열 날짜
+    const dateStr = rawDate.toString().trim();
+    if (!dateStr) return null;
+
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) {
+      console.warn('유효하지 않은 날짜 문자열:', dateStr);
+      return null;
+    }
+
+    console.log('문자열 날짜 변환:', {
+      원본: dateStr,
+      변환결과: date.toLocaleString()
+    });
+    return date;
+
+  } catch (error) {
+    console.error('날짜 처리 오류:', { rawDate, error });
     return null;
   }
 };
 // UserInfoForm 컴포넌트 정의
 function UserInfoForm() {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [isDataLoaded, setIsDataLoaded] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     residentNumber: '',
@@ -88,6 +98,8 @@ function UserInfoForm() {
     da_ratio: '',
     ea_ratio: ''
   });
+  const fileInputRef = useRef(null);
+  const STORAGE_KEY = 'ubioData';
   // BMI 자동 계산 함수
   const calculateBMI = (height, weight) => {
     if (height && weight) {
@@ -210,293 +222,312 @@ function UserInfoForm() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // 필수 필드 검증
-    if (!formData.name.trim()) {
-      alert('이름을 입력해주세요.');
-      return;
-    }
-    if (!formData.residentNumber.trim()) {
-      alert('주민등록번호를 입력해주세요.');
-      return;
-    }
     try {
-      const result = await saveUserInfo(formData);
-      if (result.success) {
-        alert('정보가 성공적으로 저장되었습니다.');
-        // 폼 초기화
-        setFormData({
-          name: '',
-          residentNumber: '',
-          gender: '',
-          phone: '',
-          personality: '',
-          height: '',
-          weight: '',
-          bmi: '',
-          stress: '',
-          workIntensity: '',
-          pulse: '',
-          systolicBP: '',
-          diastolicBP: '',
-          selectedCategory: '',
-          selectedSubCategory: '',
-          selectedSymptom: '',
-          selectedSymptoms: [],
-          medication: '',
-          preference: '',
-          memo: ''
+      validateFormData();
+      
+      // 여기에 저장 로직 추가
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(formData));
+      alert('데이터가 성공적으로 저장되었습니다.');
+      
+    } catch (error) {
+      alert(error.message);
+      console.error('저장 오류:', error);
+    }
+  };
+  // Excel 날짜 변환 함수
+  const parseExcelDate = (dateValue) => {
+    try {
+      // 숫자형 Excel 날짜
+      if (typeof dateValue === 'number') {
+        const EXCEL_EPOCH = new Date(Date.UTC(1899, 11, 30));
+        const msPerDay = 24 * 60 * 60 * 1000;
+        const date = new Date(EXCEL_EPOCH.getTime() + (dateValue - 1) * msPerDay);
+        
+        console.log('Excel 날짜 변환:', {
+          입력값: dateValue,
+          변환결과: date.toLocaleString()
         });
-      } else {
-        alert(result.message || '저장 중 오류가 발생했습니다.');
+        
+        return date;
       }
-    } catch (error) {
-      console.error('Save error:', error);
-      alert('저장 중 오류가 발생했습니다.');
-    }
-  };
-  // parseExcelDate 함수 수정
-  const parseExcelDate = (dateStr) => {
-    console.log('입력된 날짜 문자열:', dateStr);
-    // "M/D/YY HH:mm" 형식 파싱 (예: "7/17/24 18:02")
-    const match = dateStr.match(/(\d{1,2})\/(\d{1,2})\/(\d{2})\s+(\d{1,2}):(\d{2})/);
-    if (match) {
-      const [_, month, day, year, hour, minute] = match;
-      const date = new Date(2000 + parseInt(year), parseInt(month) - 1, parseInt(day), parseInt(hour), parseInt(minute));
       
-      console.log('파싱된 날짜 정보:', {
-        원본: dateStr,
-        년: 2000 + parseInt(year),
-        월: parseInt(month),
-        일: parseInt(day),
-        시: parseInt(hour),
-        분: parseInt(minute),
-        생성된Date: date.toISOString()
-      });
-      return {
-        dateStr: dateStr,
-        date: date
-      };
-    }
-    console.log('날짜 파싱 실패:', dateStr);
-    return null;
-  };
-  // 날짜 파싱 함수 새로 작성
-  function parseDateParts(dateStr) {
-    try {
-      // 입력 예: "10/1/24 8:37"
-      const [datePart, timePart] = dateStr.split(' ');
-      const [month, day, yearStr] = datePart.split('/');
-      const [hours, minutes] = timePart.split(':');
+      // 문자열 날짜
+      const dateStr = String(dateValue).trim();
+      const date = new Date(dateStr);
       
-      // 2024년으로 변환 (24 -> 2024)
-      const fullYear = 2000 + parseInt(yearStr, 10);
-      
-      const result = {
-        year: fullYear,
-        month: parseInt(month, 10),
-        day: parseInt(day, 10),
-        hour: parseInt(hours, 10),
-        minute: parseInt(minutes, 10)
-      };
-      console.log('날짜 파싱 결과:', {
-        입력: dateStr,
-        결과: result
-      });
-      return result;
-    } catch (error) {
-      console.error('날짜 파싱 오류:', {
+      console.log('문자열 날짜 변환:', {
         입력값: dateStr,
-        에러: error.message
+        변환결과: date.toLocaleString()
       });
+      
+      return date;
+
+    } catch (error) {
+      console.error('날짜 변환 실패:', { dateValue, error });
       return null;
     }
-  }
-  // 날짜 비교 함수 최적화
-  const compareDates = (dateStrA, dateStrB) => {
-    const partsA = parseDateParts(dateStrA);
-    const partsB = parseDateParts(dateStrB);
-    // Date 객체 생성 (월은 0-based이므로 1을 빼줌)
-    const dateA = new Date(
-      partsA.year, 
-      partsA.month - 1, 
-      partsA.day, 
-      partsA.hour, 
-      partsA.minute
-    );
-    const dateB = new Date(
-      partsB.year, 
-      partsB.month - 1, 
-      partsB.day, 
-      partsB.hour, 
-      partsB.minute
-    );
-    console.log('날짜 비교:', {
-      A: dateStrA,
-      A_date: dateA.toISOString(),
-      B: dateStrB,
-      B_date: dateB.toISOString(),
-      차이: dateA.getTime() - dateB.getTime()
-    });
-    // timestamp 비교
-    return dateA.getTime() - dateB.getTime();
   };
-  const loadUbioData = async () => {
-    try {
-      const fileInput = document.querySelector('input[type="file"]');
-      if (!fileInput || !fileInput.files || !fileInput.files[0]) {
-        alert('먼저 Excel 파일을 선택해주세요.');
-        return;
-      }
-      const currentUserName = formData.name;
-      if (!currentUserName) {
-        alert('먼저 기본 정보의 이름을 입력해주세요.');
-        return;
-      }
-      const file = fileInput.files[0];
-      const reader = new FileReader();
-      // JavaScript에서 날짜 형식 통일
-      const formatDate = (date) => {
-        const yy = date.getFullYear().toString().slice(-2);
-        const mm = String(date.getMonth() + 1).padStart(2, '0');
-        const dd = String(date.getDate()).padStart(2, '0');
-        const hh = String(date.getHours()).padStart(2, '0');
-        const min = String(date.getMinutes()).padStart(2, '0');
-        
-        return `${yy}/${mm}/${dd} ${hh}:${min}`;
-      };
-      reader.onload = async (e) => {
-        try {
-          const data = e.target.result;
-          const workbook = XLSX.read(data, { type: 'array' });
-          const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-          
-          const rows = XLSX.utils.sheet_to_json(worksheet, { 
-            header: 1,
-            raw: false
-          });
-          console.log('검색할 사용자 이름:', currentUserName);
-          
-          // 1단계: 이름이 일치하는 행들 찾기
-          const matchingRows = rows.filter((row, index) => {
-            if (index === 0) return false;
-            return row[0] === formData.name;
-          });
-          console.log('매칭된 모든 행:', matchingRows.map(row => ({
-            행: rows.indexOf(row) + 1,
-            날짜: row[5],
-            이름: row[0],
-            전체데이터: row
-          })));
-          // 2단계: 날짜 비교하여 정렬
-          const sortedRows = matchingRows
-            .map(row => {
-              const rowIndex = rows.indexOf(row) + 1;
-              const dateStr = row[5];
-              const dateParts = parseDateParts(dateStr);
-              
-              if (!dateParts) {
-                console.log('날짜 파싱 실패:', {
-                  행: rowIndex,
-                  날짜문자열: dateStr
-                });
-                return null;
-              }
-              
-              const date = new Date(
-                dateParts.year,
-                dateParts.month - 1,
-                dateParts.day,
-                dateParts.hour,
-                dateParts.minute
-              );
-              
-              return {
-                rowIndex,
-                dateStr,
-                dateParts,
-                date,
-                timestamp: date.getTime(),
-                row
-              };
-            })
-            .filter(item => item !== null && item.date instanceof Date && !isNaN(item.date.getTime()))
-            .sort((a, b) => b.timestamp - a.timestamp);
-          console.log('정렬된 결과:', sortedRows.map(item => ({
-            행: item.rowIndex,
-            날짜: item.dateStr,
-            타임스탬프: item.timestamp
-          })));
-          if (sortedRows.length === 0) {
-            alert('유효한 날짜 데이터를 찾을 수 없습니다.');
-            return;
-          }
-          const latestData = sortedRows[0];
-          console.log('선택된 데이터:', {
-            행: latestData.rowIndex,
-            날짜: latestData.dateStr,
-            파싱된날짜: latestData.dateParts
-          });
-          // 데이터 입력
-          setFormData(prev => ({
-            ...prev,
-            ab_ms: worksheet[`J${latestData.rowIndex}`]?.v?.toString() || '',
-            ac_ms: worksheet[`K${latestData.rowIndex}`]?.v?.toString() || '',
-            ad_ms: worksheet[`L${latestData.rowIndex}`]?.v?.toString() || '',
-            ae_ms: worksheet[`M${latestData.rowIndex}`]?.v?.toString() || '',
-            ba_ratio: worksheet[`N${latestData.rowIndex}`]?.v?.toString() || '',
-            ca_ratio: worksheet[`O${latestData.rowIndex}`]?.v?.toString() || '',
-            da_ratio: worksheet[`P${latestData.rowIndex}`]?.v?.toString() || '',
-            ea_ratio: worksheet[`Q${latestData.rowIndex}`]?.v?.toString() || ''
-          }));
-        } catch (error) {
-          console.error('Excel 파일 처리 중 오류:', error);
-          console.log('에러 상세:', error);
-          alert('Excel 파일을 처리하는 중 오류가 발생했습니다.');
-        }
-      };
-      reader.readAsArrayBuffer(file);
-    } catch (error) {
-      console.error('파일 로드 중 오류:', error);
-      alert('파일을 로드하는 중 오류가 발생했습니다.');
+  // 파일 입력 초기화
+  const clearFileInput = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
   };
-  const handleFileUpload = async (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      try {
-        const data = e.target.result;
-        const workbook = XLSX.read(data, { type: 'binary' });
-        const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-        const jsonData = XLSX.utils.sheet_to_json(worksheet);
-        if (jsonData && jsonData.length > 0) {
-          const latestData = jsonData[jsonData.length - 1];
-          
-          // 맥파 데이터 필드 매핑
-          setFormData(prev => ({
-            ...prev,
-            ab_ms: latestData['a-b'] || '',
-            ac_ms: latestData['a-c'] || '',
-            ad_ms: latestData['a-d'] || '',
-            ae_ms: latestData['a-e'] || '',
-            ba_ratio: latestData['b/a'] || '',
-            ca_ratio: latestData['c/a'] || '',
-            da_ratio: latestData['d/a'] || '',
-            ea_ratio: latestData['e/a'] || ''
-          }));
-          console.log('Loaded Excel data:', latestData); // 데이터 확인용 로그
-        }
-      } catch (error) {
-        console.error('Excel 파일 읽기 실패:', error);
-        alert('Excel 파일을 읽는 중 오류가 발생했습니다.');
+  // 데이터 초기화
+  const clearFormData = () => {
+    setFormData(prev => ({
+      ...prev,
+      ab_ms: '',
+      ac_ms: '',
+      ad_ms: '',
+      ae_ms: '',
+      ba_ratio: '',
+      ca_ratio: '',
+      da_ratio: '',
+      ea_ratio: ''
+    }));
+    setIsDataLoaded(false);
+  };
+  const getLatestData = (rows, userName) => {
+    try {
+      console.log('데이터 처리 시작:', {
+        전체행수: rows.length,
+        사용자: userName
+      });
+
+      // 헤더 제외, 이름으로 필터링
+      const filteredRows = rows.slice(1).filter(row => {
+        if (!Array.isArray(row)) return false;
+        const rowName = row[0]?.toString().trim();
+        return rowName === userName;
+      });
+
+      console.log('이름으로 필터링된 행:', filteredRows);
+
+      if (filteredRows.length === 0) {
+        throw new Error(`'${userName}' 사용자의 데이터가 없습니다.`);
       }
-    };
-    reader.onerror = (error) => {
-      console.error('FileReader 오류:', error);
-      alert('파일을 읽는 중 오류가 발생했습니다.');
-    };
-    reader.readAsBinaryString(file);
+
+      // 날짜 변환 및 정렬
+      const rowsWithDates = filteredRows
+        .map(row => {
+          const date = parseExcelDate(row[5]);
+          if (!date || isNaN(date.getTime())) {
+            console.warn('유효하지 않은 날짜:', row[5]);
+            return null;
+          }
+          return { row, date, timestamp: date.getTime() };
+        })
+        .filter(item => item !== null)
+        .sort((a, b) => b.timestamp - a.timestamp);
+
+      console.log('날짜로 정렬된 데이터:', 
+        rowsWithDates.map(({ date, row }) => ({
+          날짜: date.toLocaleString(),
+          원본날짜: row[5],
+          이름: row[0]
+        }))
+      );
+
+      if (rowsWithDates.length === 0) {
+        throw new Error('유효한 날짜가 있는 데이터가 없습니다.');
+      }
+
+      return rowsWithDates[0].row;
+
+    } catch (error) {
+      console.error('데이터 처리 오류:', error);
+      throw error;
+    }
+  };
+  // JSON 데이터 다운로드 함수
+  const downloadJSON = (data, filename = 'excel-data.json') => {
+    try {
+      const jsonStr = JSON.stringify(data, null, 2);
+      const blob = new Blob([jsonStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      console.log('JSON 데이터 다운로드 완료');
+    } catch (error) {
+      console.error('JSON 다운로드 실패:', error);
+    }
+  };
+  // 데이터 검증 함수
+  const validateExcelData = (rows) => {
+    if (!Array.isArray(rows) || rows.length < 2) {
+      console.error('유효하지 않은 데이터 구조:', rows);
+      return false;
+    }
+
+    // 헤더 검증
+    const headers = rows[0];
+    if (!Array.isArray(headers) || headers.length < 17) {
+      console.error('유효하지 않은 헤더:', headers);
+      return false;
+    }
+
+    // 데이터 행 검증
+    const dataRows = rows.slice(1);
+    const validRows = dataRows.filter(row => {
+      if (!Array.isArray(row)) return false;
+      
+      const hasName = row[0]?.toString().trim();
+      const hasDate = row[5] != null;
+      const hasValues = row.slice(9, 17).some(val => 
+        val != null && val.toString().trim() !== ''
+      );
+
+      return hasName && hasDate && hasValues;
+    });
+
+    console.log('데이터 검증 결과:', {
+      전체행수: rows.length,
+      유효행수: validRows.length,
+      헤더: headers
+    });
+
+    return validRows.length > 0;
+  };
+  // 데이터 필드 검증
+  const validateField = (value) => {
+    if (value == null || value === undefined) return '';
+    return value.toString().trim();
+  };
+  // 데이터 매핑 함수
+  const mapExcelData = (data) => {
+    try {
+      const mappedData = {
+        ab_ms: validateField(data[9]),
+        ac_ms: validateField(data[10]),
+        ad_ms: validateField(data[11]),
+        ae_ms: validateField(data[12]),
+        ba_ratio: validateField(data[13]),
+        ca_ratio: validateField(data[14]),
+        da_ratio: validateField(data[15]),
+        ea_ratio: validateField(data[16])
+      };
+
+      // 데이터 유효성 검사
+      const hasValidData = Object.values(mappedData).some(value => 
+        value !== '' && !isNaN(parseFloat(value))
+      );
+
+      if (!hasValidData) {
+        throw new Error('유효한 맥파 데이터가 없습니다.');
+      }
+
+      return mappedData;
+    } catch (error) {
+      console.error('데이터 매핑 오류:', error);
+      throw new Error('데이터 형식이 올바르지 않습니다.');
+    }
+  };
+  // 파일 선택 핸들러
+  const handleFileSelect = async (event) => {
+    setError(null);
+    setIsLoading(true);
+    setIsDataLoaded(false);
+
+    try {
+      const file = event.target.files?.[0];
+      if (!file) {
+        throw new Error('파일을 선택해주세요.');
+      }
+
+      const userName = formData.name?.toString().trim();
+      if (!userName) {
+        throw new Error('먼저 이름을 입력해주세요.');
+      }
+
+      // 파일 타입 검증
+      const fileType = file.type;
+      const validTypes = [
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'application/octet-stream' // .xlsx 파일의 경우
+      ];
+
+      if (!validTypes.includes(fileType) && 
+          !file.name.match(/\.(xlsx|xls)$/i)) {
+        throw new Error('Excel 파일만 업로드 가능합니다.');
+      }
+
+      // 파일 읽기
+      const arrayBuffer = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        
+        reader.onload = (e) => {
+          try {
+            resolve(e.target.result);
+          } catch (error) {
+            reject(new Error('파일 읽기 실패'));
+          }
+        };
+        
+        reader.onerror = () => reject(new Error('파일 읽기 실패'));
+        reader.readAsArrayBuffer(file);
+      });
+
+      console.log('파일 읽기 완료:', {
+        파일명: file.name,
+        크기: file.size
+      });
+
+      // Excel 데이터 처리
+      const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+      const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+      
+      if (!firstSheet) {
+        throw new Error('엑셀 시트를 찾을 수 없습니다.');
+      }
+
+      const rows = XLSX.utils.sheet_to_json(firstSheet, {
+        header: 1,
+        raw: true,
+        defval: null
+      });
+
+      if (!Array.isArray(rows) || rows.length < 2) {
+        throw new Error('엑셀 파일에 데이터가 없습니다.');
+      }
+
+      // 최신 데이터 가져오기
+      const latestData = getLatestData(rows, userName);
+      if (!latestData) {
+        throw new Error(`${userName} 사용자의 데이터를 찾을 수 없습니다.`);
+      }
+
+      // 데이터 매핑 및 검증
+      const mappedData = mapExcelData(latestData);
+      
+      // 상태 업데이트
+      setFormData(prev => ({
+        ...prev,
+        ...mappedData
+      }));
+
+      setIsDataLoaded(true);
+      console.log('데이터 로드 성공:', mappedData);
+
+    } catch (error) {
+      console.error('파일 처리 오류:', error);
+      setError(error.message);
+      setIsDataLoaded(false);
+      
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
   // 날짜 파싱 캐시 추가
   const dateCache = new Map();
@@ -517,6 +548,52 @@ function UserInfoForm() {
     
     return dateCache.get(dateStr);
   }
+  const validateFormData = () => {
+    if (!formData.name?.trim()) {
+      throw new Error('이름을 입력해주세요.');
+    }
+
+    const requiredFields = ['ab_ms', 'ac_ms', 'ad_ms', 'ae_ms', 'ba_ratio', 'ca_ratio', 'da_ratio', 'ea_ratio'];
+    const missingFields = requiredFields.filter(field => !formData[field]?.trim());
+    
+    if (missingFields.length > 0) {
+      throw new Error('맥파 데이터를 먼저 가져오세요.');
+    }
+
+    return true;
+  };
+  // 날짜 문자열을 Date 객체로 변환하는 함수
+  const parseCustomDate = (dateStr) => {
+    try {
+      if (!dateStr) return null;
+      
+      // 문자열로 변환 및 공백 제거
+      const str = dateStr.toString().trim();
+      const [datePart, timePart = '00:00'] = str.split(' ');
+      
+      if (!datePart) return null;
+
+      // YY-MM-DD 형식 처리
+      const [year, month, day] = datePart.split('-').map(Number);
+      const [hour, minute] = timePart.split(':').map(Number);
+
+      if (!year || !month || !day) {
+        console.warn('잘못된 날짜 형식:', dateStr);
+        return null;
+      }
+
+      // 2000년대로 변환
+      const fullYear = year < 100 ? 2000 + year : year;
+      const date = new Date(fullYear, month - 1, day, hour || 0, minute || 0);
+
+      return date;
+
+    } catch (error) {
+      console.error('날짜 파싱 오류:', { dateStr, error });
+      return null;
+    }
+  };
+
   return (
     <form onSubmit={handleSubmit} className="form-container">
       {/* 기본 정보 섹션 */}
@@ -694,18 +771,22 @@ function UserInfoForm() {
         <div className="file-upload">
           <input
             type="file"
+            ref={fileInputRef}
+            onChange={handleFileSelect}
             accept=".xlsx,.xls"
-            onChange={handleFileUpload}
-            style={{ marginBottom: '10px' }}
+            disabled={isLoading || !formData.name}
           />
         </div>
-        <button 
-          type="button" 
-          onClick={loadUbioData}
-          className="button secondary"
-        >
-          맥파 데이터 가져오기
-        </button>
+        <div className="input-row" style={{ marginBottom: '2rem' }}>
+          <button 
+            className="button secondary"
+            onClick={handleFileSelect}
+            disabled={isLoading || !formData.name}
+          >
+            {isLoading ? '데이터 불러오는 중...' : '데이터 가져오기'}
+          </button>
+          {error && <span className="error-message">{error}</span>}
+        </div>
         <div className="input-row">
           <div className="input-group">
             <label className="form-label">a-b</label>
