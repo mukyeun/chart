@@ -1,6 +1,7 @@
 {
   "name": "client",
   "version": "0.1.0",
+  "homepage": "https://mukyeun.github.io/client",
   "private": true,
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -9,19 +10,20 @@
     "@mui/material": "^6.1.10",
     "axios": "^1.7.9",
     "cra-template": "1.2.0",
+    "gh-pages": "^6.2.0",
     "react-router-dom": "^7.0.2",
     "react-scripts": "5.0.1",
+    "recharts": "^2.10.3",
     "web-vitals": "^4.2.4",
-    "xlsx": "^0.18.5",
-    "recharts": "^2.10.3"
+    "xlsx": "^0.18.5"
   },
   "scripts": {
-    "start": "set PORT=3001 && react-scripts start",
+    "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "electron": "electron .",
-    "dev": "start npm start && timeout /t 5 && npm run electron"
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d build"
   },
   "eslintConfig": {
     "extends": [
