@@ -254,7 +254,7 @@ const UserDataTable = () => {
       setEditingUser(null);
     } catch (error) {
       console.error('Edit error:', error);
-      alert('데이터 수정 중 오류가 발생했습니다.');
+      alert('데이터 수정 중 오���가 발생했습니다.');
     }
   };
 
@@ -327,6 +327,9 @@ const UserDataTable = () => {
       <td>{user.pulse}</td>
       <td>{user.systolicBP}</td>
       <td>{user.diastolicBP}</td>
+      <td>{user.pvc}</td>
+      <td>{user.bv}</td>
+      <td>{user.sv}</td>
       <td>{Array.isArray(user.selectedSymptoms) ? user.selectedSymptoms.join(', ') : user.selectedSymptoms}</td>
       <td>{user.medication}</td>
       <td>{user.preference}</td>
@@ -515,6 +518,15 @@ const UserDataTable = () => {
               <th onClick={() => handleSort('diastolicBP')} className="sortable-header">
                 이완기 혈압 {renderSortIcon('diastolicBP')}
               </th>
+              <th onClick={() => handleSort('pvc')} className="sortable-header">
+                PVC {renderSortIcon('pvc')}
+              </th>
+              <th onClick={() => handleSort('bv')} className="sortable-header">
+                BV {renderSortIcon('bv')}
+              </th>
+              <th onClick={() => handleSort('sv')} className="sortable-header">
+                SV {renderSortIcon('sv')}
+              </th>
               <th onClick={() => handleSort('selectedSymptoms')} className="sortable-header">
                 증상 {renderSortIcon('selectedSymptoms')}
               </th>
@@ -535,18 +547,19 @@ const UserDataTable = () => {
           <tbody>
             {getFilteredData()
               .slice(visibleRange.start, visibleRange.end)
-              .map(user => (
-                <tr key={user._id} role="row">
+              .map((user, index) => (
+                <tr key={user._id || `row-${index}`} role="row">
                   <td role="gridcell">
                     <input
                       type="checkbox"
                       className="custom-checkbox"
                       checked={checkedItems.has(user._id)}
-                      onChange={() => toggleCheckbox(user._id)}
+                      onChange={(e) => toggleCheckbox(user._id, e)}
                       aria-label={`${user.name} 선택`}
+                      id={`checkbox-${user._id}`}
                     />
                   </td>
-                  <td>{user.createdAt}</td>
+                  <td>{formatDate(user.createdAt)}</td>
                   <td>{user.name}</td>
                   <td>{user.residentNumber}</td>
                   <td>{user.gender}</td>
@@ -558,6 +571,9 @@ const UserDataTable = () => {
                   <td>{user.pulse}</td>
                   <td>{user.systolicBP}</td>
                   <td>{user.diastolicBP}</td>
+                  <td>{user.pvc}</td>
+                  <td>{user.bv}</td>
+                  <td>{user.sv}</td>
                   <td>{Array.isArray(user.selectedSymptoms) ? user.selectedSymptoms.join(', ') : user.selectedSymptoms}</td>
                   <td>{user.medication}</td>
                   <td>{user.preference}</td>

@@ -96,7 +96,10 @@ function UserInfoForm() {
     ba_ratio: '',
     ca_ratio: '',
     da_ratio: '',
-    ea_ratio: ''
+    ea_ratio: '',
+    pvc: '',
+    bv: '',
+    sv: ''
   });
   const fileInputRef = useRef(null);
   const STORAGE_KEY = 'ubioData';
@@ -206,57 +209,31 @@ function UserInfoForm() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    // 맥파분석 값 계산
+    const pvcValue = calculatePVC();
+    const bvValue = calculateBV();
+    const svValue = calculateSV();
+
+    // 저장할 데이터에 계산된 값들 포함
+    const dataToSave = {
+      ...formData,
+      pvc: pvcValue,
+      bv: bvValue,
+      sv: svValue,
+      createdAt: new Date().toISOString()
+    };
+
     try {
-      validateFormData();
-      
-      // 서버로 데이터 전송
-      const response = await saveUserInfo(formData);
-      
+      const response = await saveUserInfo(dataToSave);
       if (response.success) {
-        // 로컬 스토리지 저장은 선택적
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(formData));
-        alert('데이터가 성공적으로 저장되었습니다.');
-        
-        // 폼 초기화 또는 다른 페이지로 이��
-        setFormData({
-          name: '',
-          residentNumber: '',
-          phone: '',
-          personality: '',
-          height: '',
-          weight: '',
-          bmi: '',
-          gender: '',
-          stressLevel: '',
-          workIntensity: '',
-          medication: '',
-          preference: '',
-          memo: '',
-          selectedCategory: '',
-          selectedSubCategory: '',
-          selectedSymptom: '',
-          selectedSymptoms: [],
-          pulse: '',
-          systolicBP: '',
-          diastolicBP: '',
-          stress: '',
-          workIntensity: '',
-          ab_ms: '',
-          ac_ms: '',
-          ad_ms: '',
-          ae_ms: '',
-          ba_ratio: '',
-          ca_ratio: '',
-          da_ratio: '',
-          ea_ratio: ''
-        });
+        alert('데이터가 저장되었습니다.');
+        resetForm();
       } else {
         throw new Error('저장에 실패했습니다.');
       }
-      
     } catch (error) {
-      alert(error.message);
-      console.error('저장 오류:', error);
+      console.error('Save error:', error);
+      alert('데이터 저장 중 오류가 발생했습니다.');
     }
   };
   // Excel 날짜 변환 함수
@@ -619,6 +596,61 @@ function UserInfoForm() {
     }
   };
 
+  // 말초혈관 수축도 계산
+  const calculatePVC = () => {
+    const ba = parseFloat(formData.ba_ratio) || 0;
+    const da = parseFloat(formData.da_ratio) || 0;
+    const ae = parseFloat(formData.ae_ms) || 0;
+    return (0.35 * Math.abs(ba) + 0.25 * Math.abs(da) + 0.4 * ae).toFixed(2);
+  };
+
+  // 혈액 점도 계산
+  const calculateBV = () => {
+    const ca = parseFloat(formData.ca_ratio) || 0;
+    const cd = Math.abs(parseFloat(formData.ac_ms) - parseFloat(formData.ad_ms)) || 0;
+    return (0.6 * Math.abs(ca) + 0.4 * cd).toFixed(2);
+  };
+
+  // 일회박출량 계산
+  const calculateSV = () => {
+    const da = parseFloat(formData.da_ratio) || 0;
+    const ae = parseFloat(formData.ae_ms) || 0;
+    return (0.65 * Math.abs(da) + 0.35 * Math.abs(ae)).toFixed(2);
+  };
+
+  // resetForm 함수 추가
+  const resetForm = () => {
+    setFormData({
+      name: '',
+      residentNumber: '',
+      gender: '',
+      height: '',
+      weight: '',
+      bmi: '',
+      personality: '',
+      stress: '',
+      workIntensity: '',
+      pulse: '',
+      systolicBP: '',
+      diastolicBP: '',
+      ab_ms: '',
+      ac_ms: '',
+      ad_ms: '',
+      ae_ms: '',
+      ba_ratio: '',
+      ca_ratio: '',
+      da_ratio: '',
+      ea_ratio: '',
+      selectedCategory: '',
+      selectedSubCategory: '',
+      selectedSymptom: '',
+      selectedSymptoms: [],
+      medication: '',
+      preference: '',
+      memo: ''
+    });
+  };
+
   return (
     <div className="form-container">
       {/* 기본 정보 섹션 */}
@@ -877,6 +909,48 @@ function UserInfoForm() {
             />
           </div>
         </div>
+        <div className="form-row pulse-analysis-results">
+          <div className="form-group">
+            <label className="form-label">말초혈관 수축도 (PVC)</label>
+            <input
+              type="text"
+              name="pvc"
+              value={calculatePVC()}
+              readOnly
+              className="analysis-result"
+            />
+          </div>
+          <div className="form-group">
+            <label className="form-label">혈액 점도 (BV)</label>
+            <input
+              type="text"
+              name="bv"
+              value={calculateBV()}
+              readOnly
+              className="analysis-result"
+            />
+          </div>
+          <div className="form-group">
+            <label className="form-label">일회박출량 (SV)</label>
+            <input
+              type="text"
+              name="sv"
+              value={calculateSV()}
+              readOnly
+              className="analysis-result"
+            />
+          </div>
+          <div className="form-group">
+            <label className="form-label">심박수 (HR)</label>
+            <input
+              type="text"
+              name="hr"
+              value={formData.pulse}
+              readOnly
+              className="analysis-result"
+            />
+          </div>
+        </div>
       </div>
 
       {/* 증상 선택 섹션 */}
@@ -884,7 +958,7 @@ function UserInfoForm() {
         <h2 className="section-title">증상 선택</h2>
         <div className="form-row symptoms-category-row">
           <div className="form-group category">
-            <label className="form-label">대분류</label>
+            <label className="form-label">대분��</label>
             <select value={formData.selectedCategory} onChange={handleCategoryChange}>
               <option key="default-category" value="">선택하세요</option>
               {Object.keys(증상카테고리).map((category, index) => (
