@@ -29,7 +29,8 @@ const UserDataTable = () => {
   const [filters, setFilters] = useState({
     startDate: '',
     endDate: '',
-    residentNumberPrefix: ''
+    residentNumberPrefix: '',
+    name: ''
   });
 
   // 정렬된 데이터를 반환하는 함수
@@ -274,7 +275,8 @@ const UserDataTable = () => {
     setFilters({
       startDate: '',
       endDate: '',
-      residentNumberPrefix: ''
+      residentNumberPrefix: '',
+      name: ''
     });
   };
 
@@ -289,6 +291,11 @@ const UserDataTable = () => {
 
       if (filters.residentNumberPrefix && 
           !user.residentNumber.startsWith(filters.residentNumberPrefix)) {
+        return false;
+      }
+
+      if (filters.name && 
+          !user.name.toLowerCase().includes(filters.name.toLowerCase())) {
         return false;
       }
 
@@ -390,6 +397,16 @@ const UserDataTable = () => {
             type="date" 
             value={filters.endDate}
             onChange={(e) => handleFilterChange('endDate', e.target.value)}
+          />
+        </div>
+        
+        <div className="filter-group">
+          <label>이름</label>
+          <input 
+            type="text" 
+            placeholder="이름으로 검색"
+            value={filters.name}
+            onChange={(e) => handleFilterChange('name', e.target.value)}
           />
         </div>
         
