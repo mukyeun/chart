@@ -1,10 +1,15 @@
 // src/components/common/LoadingSpinner.jsx
 import React from 'react';
-import '../../styles/components/LoadingSpinner.css';
+import './LoadingSpinner.css';
 
-export const LoadingSpinner = ({ size = 'medium' }) => (
-  <div className={`loading-spinner ${size}`}>
-    <div className="spinner-circle"></div>
-    <span className="spinner-text">처리중...</span>
-  </div>
+const LoadingSpinner = ({ overlay, message = '데이터를 불러오는 중...' }) => (
+  <>
+    {overlay && <div className="loading-spinner-overlay" />}
+    <div className="loading-spinner-container">
+      <div className="loading-spinner"></div>
+      <p>{message}</p>
+    </div>
+  </>
 );
+
+export default LoadingSpinner;
