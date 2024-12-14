@@ -5,16 +5,10 @@ import '../../styles/Header.css';
 const Header = () => {
   return (
     <header className="header">
-      <Link to="/" className="header-title">
-        SmartPulse Human
-      </Link>
-      <div className="header-actions">
-        <Link to="/data-input" className="header-link">
-          데이터 입력
-        </Link>
-        <Link to="/data-view" className="header-link">
-          데이터 조회
-        </Link>
+      <h1>SmartPulse Human</h1>
+      <div className="header-buttons">
+        <button>데이터 입력</button>
+        <button>데이터 조회</button>
       </div>
     </header>
   );

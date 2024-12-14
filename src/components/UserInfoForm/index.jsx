@@ -202,22 +202,6 @@ function UserInfoForm() {
       }));
     }
   };
-  const handleExportExcel = async () => {
-    try {
-      const response = await getAllUserInfo();
-      if (response.success && response.data) {
-        const worksheet = XLSX.utils.json_to_sheet(response.data);
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Users");
-        XLSX.writeFile(workbook, "user_info.xlsx");
-      } else {
-        alert('데이터 조회에 실패했습니다.');
-      }
-    } catch (error) {
-      console.error('Excel export error:', error);
-      alert('엑셀 다운로드 중 오류가 발생했습니다.');
-    }
-  };
   // 폼 제출 핸들러 추가
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -225,9 +209,50 @@ function UserInfoForm() {
     try {
       validateFormData();
       
-      // 여기에 저장 로직 추가
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(formData));
-      alert('데이터가 성공적으로 저장되었습니다.');
+      // 서버로 데이터 전송
+      const response = await saveUserInfo(formData);
+      
+      if (response.success) {
+        // 로컬 스토리지 저장은 선택적
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(formData));
+        alert('데이터가 성공적으로 저장되었습니다.');
+        
+        // 폼 초기화 또는 다른 페이지로 이��
+        setFormData({
+          name: '',
+          residentNumber: '',
+          phone: '',
+          personality: '',
+          height: '',
+          weight: '',
+          bmi: '',
+          gender: '',
+          stressLevel: '',
+          workIntensity: '',
+          medication: '',
+          preference: '',
+          memo: '',
+          selectedCategory: '',
+          selectedSubCategory: '',
+          selectedSymptom: '',
+          selectedSymptoms: [],
+          pulse: '',
+          systolicBP: '',
+          diastolicBP: '',
+          stress: '',
+          workIntensity: '',
+          ab_ms: '',
+          ac_ms: '',
+          ad_ms: '',
+          ae_ms: '',
+          ba_ratio: '',
+          ca_ratio: '',
+          da_ratio: '',
+          ea_ratio: ''
+        });
+      } else {
+        throw new Error('저장에 실패했습니다.');
+      }
       
     } catch (error) {
       alert(error.message);
@@ -499,7 +524,7 @@ function UserInfoForm() {
         throw new Error('엑셀 파일에 데이터가 없습니다.');
       }
 
-      // 최신 데이터 가져오기
+      // 신 데이터 가져오기
       const latestData = getLatestData(rows, userName);
       if (!latestData) {
         throw new Error(`${userName} 사용자의 데이터를 찾을 수 없습니다.`);
@@ -595,13 +620,12 @@ function UserInfoForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="form-container">
+    <div className="form-container">
       {/* 기본 정보 섹션 */}
       <div className="form-section basic-info-section">
-        <h3 className="section-title">기본 정보</h3>
-        
-        <div className="input-row">
-          <div className="input-group vertical">
+        <h2 className="section-title">기본 정보</h2>
+        <div className="form-row personal-info">
+          <div className="form-group name">
             <label className="form-label required">이름</label>
             <input
               type="text"
@@ -611,7 +635,7 @@ function UserInfoForm() {
               placeholder="이름을 입력하세요"
             />
           </div>
-          <div className="input-group vertical">
+          <div className="form-group registration">
             <label className="form-label required">주민등록번호</label>
             <input
               type="text"
@@ -622,7 +646,7 @@ function UserInfoForm() {
               maxLength="14"
             />
           </div>
-          <div className="input-group">
+          <div className="form-group gender">
             <label className="form-label">성별</label>
             <select
               name="gender"
@@ -635,18 +659,8 @@ function UserInfoForm() {
             </select>
           </div>
         </div>
-        {/* 연락처와 성격을 같은 input-row에 배치 */}
-        <div className="input-row">
-          <div className="input-group phone-field">
-            <label className="form-label">연락처</label>
-            <input
-              type="tel"
-              name="phone"
-              value={formData.phone}
-              onChange={handleInputChange}
-            />
-          </div>
-          <div className="input-group personality-field">
+        <div className="form-row personality-row">
+          <div className="form-group personality">
             <label className="form-label">성격</label>
             <select
               name="personality"
@@ -661,43 +675,7 @@ function UserInfoForm() {
               <option value="매우 느긋">매우 느긋</option>
             </select>
           </div>
-        </div>
-        {/* 신장, 체중, BMI */}
-        <div className="input-row">
-          <div className="input-group vertical">
-            <label className="form-label">신장</label>
-            <input
-              type="number"
-              name="height"
-              value={formData.height}
-              onChange={handleInputChange}
-              placeholder="cm"
-            />
-          </div>
-          <div className="input-group vertical">
-            <label className="form-label">체중</label>
-            <input
-              type="number"
-              name="weight"
-              value={formData.weight}
-              onChange={handleInputChange}
-              placeholder="kg"
-            />
-          </div>
-          <div className="input-group vertical">
-            <label className="form-label">BMI 지수</label>
-            <input
-              type="text"
-              name="bmi"
-              value={formData.bmi}
-              readOnly
-              placeholder="BMI"
-            />
-          </div>
-        </div>
-        {/* 스트레스, 노동강도 */}
-        <div className="input-row">
-          <div className="input-group vertical">
+          <div className="form-group stress">
             <label className="form-label">스트레스</label>
             <select
               name="stress"
@@ -712,7 +690,7 @@ function UserInfoForm() {
               <option value="매우 낮음">매우 낮음</option>
             </select>
           </div>
-          <div className="input-group vertical">
+          <div className="form-group work-intensity">
             <label className="form-label">노동강도</label>
             <select
               name="workIntensity"
@@ -728,12 +706,45 @@ function UserInfoForm() {
             </select>
           </div>
         </div>
+        <div className="form-row measurements-row">
+          <div className="form-group height">
+            <label className="form-label">신장</label>
+            <input
+              type="number"
+              name="height"
+              value={formData.height}
+              onChange={handleInputChange}
+              placeholder="cm"
+            />
+          </div>
+          <div className="form-group weight">
+            <label className="form-label">체중</label>
+            <input
+              type="number"
+              name="weight"
+              value={formData.weight}
+              onChange={handleInputChange}
+              placeholder="kg"
+            />
+          </div>
+          <div className="form-group bmi">
+            <label className="form-label">BMI 지수</label>
+            <input
+              type="text"
+              name="bmi"
+              value={formData.bmi}
+              readOnly
+              placeholder="BMI"
+            />
+          </div>
+        </div>
       </div>
+
       {/* 맥박 분석 섹션 */}
       <div className="form-section pulse-section">
-        <h3 className="section-title">맥박 분석</h3>
-        <div className="input-row">
-          <div className="input-group">
+        <h2 className="section-title">맥박 분석</h2>
+        <div className="form-row pulse-analysis-row">
+          <div className="form-group pulse">
             <label className="form-label">맥박</label>
             <input
               type="text"
@@ -743,7 +754,7 @@ function UserInfoForm() {
               placeholder="회/분"
             />
           </div>
-          <div className="input-group">
+          <div className="form-group systolic">
             <label className="form-label">수축기 혈압</label>
             <input
               type="text"
@@ -753,7 +764,7 @@ function UserInfoForm() {
               placeholder="mmHg"
             />
           </div>
-          <div className="input-group">
+          <div className="form-group diastolic">
             <label className="form-label">이완기 혈압</label>
             <input
               type="text"
@@ -765,30 +776,33 @@ function UserInfoForm() {
           </div>
         </div>
       </div>
+
       {/* 맥파 분석 섹션 */}
       <div className="form-section pulse-section">
-        <h3 className="section-title">맥파분석</h3>
-        <div className="file-upload">
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={handleFileSelect}
-            accept=".xlsx,.xls"
-            disabled={isLoading || !formData.name}
-          />
+        <h2 className="section-title">맥파분석</h2>
+        <div className="form-row file-control-row">
+          <div className="form-group file-upload">
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileSelect}
+              accept=".xlsx,.xls"
+              disabled={isLoading || !formData.name}
+            />
+          </div>
+          <div className="form-group">
+            <button 
+              className="button secondary"
+              onClick={handleFileSelect}
+              disabled={isLoading || !formData.name}
+            >
+              {isLoading ? '데이터 불러오는 중...' : '데이터 가져오기'}
+            </button>
+            {error && <span className="error-message">{error}</span>}
+          </div>
         </div>
-        <div className="input-row" style={{ marginBottom: '2rem' }}>
-          <button 
-            className="button secondary"
-            onClick={handleFileSelect}
-            disabled={isLoading || !formData.name}
-          >
-            {isLoading ? '데이터 불러오는 중...' : '데이터 가져오기'}
-          </button>
-          {error && <span className="error-message">{error}</span>}
-        </div>
-        <div className="input-row">
-          <div className="input-group">
+        <div className="form-row pulse-wave-row">
+          <div className="form-group">
             <label className="form-label">a-b</label>
             <input
               type="text"
@@ -797,7 +811,7 @@ function UserInfoForm() {
               onChange={handleInputChange}
             />
           </div>
-          <div className="input-group">
+          <div className="form-group">
             <label className="form-label">a-c</label>
             <input
               type="text"
@@ -806,7 +820,7 @@ function UserInfoForm() {
               onChange={handleInputChange}
             />
           </div>
-          <div className="input-group">
+          <div className="form-group">
             <label className="form-label">a-d</label>
             <input
               type="text"
@@ -815,7 +829,7 @@ function UserInfoForm() {
               onChange={handleInputChange}
             />
           </div>
-          <div className="input-group">
+          <div className="form-group">
             <label className="form-label">a-e</label>
             <input
               type="text"
@@ -825,8 +839,8 @@ function UserInfoForm() {
             />
           </div>
         </div>
-        <div className="input-row">
-          <div className="input-group">
+        <div className="form-row pulse-ratio-row">
+          <div className="form-group">
             <label className="form-label">b/a</label>
             <input
               type="text"
@@ -835,7 +849,7 @@ function UserInfoForm() {
               onChange={handleInputChange}
             />
           </div>
-          <div className="input-group">
+          <div className="form-group">
             <label className="form-label">c/a</label>
             <input
               type="text"
@@ -844,7 +858,7 @@ function UserInfoForm() {
               onChange={handleInputChange}
             />
           </div>
-          <div className="input-group">
+          <div className="form-group">
             <label className="form-label">d/a</label>
             <input
               type="text"
@@ -853,7 +867,7 @@ function UserInfoForm() {
               onChange={handleInputChange}
             />
           </div>
-          <div className="input-group">
+          <div className="form-group">
             <label className="form-label">e/a</label>
             <input
               type="text"
@@ -864,11 +878,12 @@ function UserInfoForm() {
           </div>
         </div>
       </div>
+
       {/* 증상 선택 섹션 */}
       <div className="form-section symptoms-section">
-        <h3 className="section-title">증상 선택</h3>
-        <div className="input-row">
-          <div className="input-group">
+        <h2 className="section-title">증상 선택</h2>
+        <div className="form-row symptoms-category-row">
+          <div className="form-group category">
             <label className="form-label">대분류</label>
             <select value={formData.selectedCategory} onChange={handleCategoryChange}>
               <option key="default-category" value="">선택하세요</option>
@@ -879,7 +894,7 @@ function UserInfoForm() {
               ))}
             </select>
           </div>
-          <div className="input-group">
+          <div className="form-group subcategory">
             <label className="form-label">중분류</label>
             <select value={formData.selectedSubCategory} onChange={handleSubCategoryChange}>
               <option key="default" value="">선택하세요</option>
@@ -888,7 +903,7 @@ function UserInfoForm() {
               ))}
             </select>
           </div>
-          <div className="input-group">
+          <div className="form-group symptom">
             <label className="form-label">소분류</label>
             <select value={formData.selectedSymptom} onChange={handleSymptomChange}>
               <option key="default" value="">선택하세요</option>
@@ -907,11 +922,12 @@ function UserInfoForm() {
           ))}
         </div>
       </div>
+
       {/* 복용약물 섹션 */}
       <div className="form-section medication-section">
-        <h3 className="section-title">복용약물</h3>
-        <div className="input-row">
-          <div className="input-group">
+        <h2 className="section-title">복용약물</h2>
+        <div className="form-row medication-row">
+          <div className="form-group medication">
             <label className="form-label">복용 중인 약물</label>
             <select
               name="medication"
@@ -926,7 +942,7 @@ function UserInfoForm() {
               ))}
             </select>
           </div>
-          <div className="input-group">
+          <div className="form-group preference">
             <label className="form-label">기호식품</label>
             <select
               name="preference"
@@ -941,9 +957,10 @@ function UserInfoForm() {
           </div>
         </div>
       </div>
+
       {/* 메모 섹션 */}
       <div className="form-section memo-section">
-        <h3 className="section-title">메모</h3>
+        <h2 className="section-title">메모</h2>
         <div className="input-row">
           <div className="input-group">
             <label className="form-label">메모</label>
@@ -956,23 +973,18 @@ function UserInfoForm() {
           </div>
         </div>
       </div>
+
       {/* 버튼 그룹 */}
       <div className="button-group">
         <button 
-          type="button"
-          onClick={handleExportExcel}
-          className="button secondary"
-        >
-          엑셀 다운로드
-        </button>
-        <button 
           type="submit" 
           className="button primary"
+          onClick={handleSubmit}
         >
           저장하기
         </button>
       </div>
-    </form>
+    </div>
   );
 }
 // 컴포넌트 내보내기

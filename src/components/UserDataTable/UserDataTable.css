@@ -30,35 +30,27 @@
 .user-data-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.9rem;
-  background: white;
+  margin-top: 20px;
+  background-color: white;
 }
 
 .user-data-table th,
 .user-data-table td {
-  padding: 0.75rem 1rem;
+  padding: 12px 8px;
   text-align: left;
-  border-bottom: 1px solid #e2e8f0;
-  white-space: nowrap;
-  transition: background-color 0.2s;
+  border-bottom: 1px solid #dee2e6;
 }
 
-.user-data-table th {
-  background: #f1f5f9;
-  font-weight: 600;
-  color: #1e293b;
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  padding: 1rem;
-  text-transform: uppercase;
-  font-size: 0.8rem;
-  letter-spacing: 0.05em;
+.user-data-table thead th {
+  background-color: #f8f9fa;
+  padding: 12px 8px;
+  border-bottom: 2px solid #dee2e6;
+  font-weight: bold;
+  text-align: left;
 }
 
 .user-data-table tbody tr:hover {
-  background: #f8fafc;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  background-color: #f5f5f5;
 }
 
 .no-data-message {
@@ -164,5 +156,124 @@
 /* 체크박스 셀 스타일 */
 .user-data-table th:first-child,
 .user-data-table td:first-child {
-  display: none;
+  width: 50px !important;
+  min-width: 50px !important;
+  padding: 8px !important;
+  text-align: center !important;
+  vertical-align: middle !important;
+  background-color: inherit !important;
+}
+
+/* 체크박스 스타일 강제 적용 */
+.user-data-table input[type="checkbox"] {
+  display: inline-block !important;
+  width: 18px !important;
+  height: 18px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  position: static !important;
+  vertical-align: middle !important;
+  appearance: checkbox !important;
+  -webkit-appearance: checkbox !important;
+  -moz-appearance: checkbox !important;
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+
+/* 체크박스 컨테이너 스타일 */
+.checkbox-cell {
+  position: relative !important;
+  z-index: 2 !important;
+  background-color: inherit !important;
+}
+
+.header-buttons {
+  display: flex;
+  gap: 8px;
+  margin: 20px 0;
+}
+
+.delete-selected-button,
+.refresh-button,
+.excel-button {
+  padding: 8px 16px;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.delete-selected-button {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+}
+
+.delete-selected-button:disabled {
+  background-color: #e9ecef;
+  cursor: not-allowed;
+}
+
+.table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  margin-top: 1rem;
+}
+
+.user-data-table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid #ddd;
+}
+
+.select-column {
+  width: 40px;
+  min-width: 40px;
+  padding: 8px !important;
+}
+
+.checkbox-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+}
+
+.select-checkbox {
+  width: 16px !important;
+  height: 16px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  cursor: pointer;
+  border: 1px solid #aaa;
+  border-radius: 3px;
+}
+
+.user-data-table th,
+.user-data-table td {
+  padding: 12px 8px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+
+.user-data-table thead th {
+  background-color: #f8f9fa;
+  font-weight: 600;
+}
+
+.user-data-table tbody tr:hover {
+  background-color: #f5f5f5;
+}
+
+/* 체크박스 스타일 재정의 */
+input[type="checkbox"].select-checkbox {
+  -webkit-appearance: checkbox !important;
+  -moz-appearance: checkbox !important;
+  appearance: checkbox !important;
+  opacity: 1 !important;
+  position: static !important;
+  pointer-events: auto !important;
+  background: white !important;
 }
